@@ -1,10 +1,15 @@
 package core
 
-import "errors"
+import ( 
+	"errors"
+	"fmt"
+)
 // reads the length typically the first integer of the string
 // until hit by an non-digit byte and returns
 // the integer and the delta = length + 2 (CRLF)
 // TODO: Make it simpler and read until we get `\r` just like other functions
+
+
 func readLength(data []byte) (int, int) {
 	pos, length := 0, 0
 	for pos = range data {
@@ -101,6 +106,20 @@ func DecodeOne(data []byte)(interface{}, int, error){
 	return nil,0, nil
 }
 
+func DecodeArrayString(data []byte) ([]string, error) {
+	value, err := Decode(data)
+	if err != nil {
+		return nil, err
+	}
+
+	ts := value.([]interface{})
+	tokens := make([]string, len(ts))
+	for i := range tokens {
+		tokens[i] = ts[i].(string)
+	}
+
+	return tokens, nil
+}
 func Decode(data []byte)(interface{},error){
 	if len(data) == 0 {
 		return nil, errors.New("no data")
@@ -108,4 +127,14 @@ func Decode(data []byte)(interface{},error){
 	}
 	value, _,err := DecodeOne(data)
 	return value,err
+}
+func Encode(value interface{}, isSimple bool) []byte {
+	switch v := value.(type) {
+	case string:
+		if isSimple {
+			return []byte(fmt.Sprintf("+%s\r\n", v))
+		}
+		return []byte(fmt.Sprintf("$%d\r\n%s\r\n", len(v), v))
+	}
+	return []byte{}
 }
